@@ -63,14 +63,28 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Error'),
-        content: Text(_homeProvider.error!),
+        content: Text(_homeProvider.error ?? "Unknown error"),
         actions: [
+          TextButton(
+            onPressed: () async {
+              _homeProvider.clearError();
+
+              Navigator.of(context).pop();
+
+              await _homeProvider.getImages();
+
+              if (_homeProvider.error != null) {
+                await errorHandlerDialog();
+              }
+            },
+            child: const Text('Retry'),
+          ),
           TextButton(
             onPressed: () {
               _homeProvider.clearError();
               Navigator.of(context).pop();
             },
-            child: const Text('OK'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -81,10 +95,9 @@ class _HomePageState extends State<HomePage> {
   Future<void> viewImageDialog(Photo photo) async {
     await showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
+      builder: (context) => SizedBox(
+        width: MediaQuery.of(context).size.width * 0.5,
+        child: Dialog(
           child: CachedNetworkImage(
             imageUrl: photo.largeImageURL,
             progressIndicatorBuilder: (context, url, progress) {
@@ -143,56 +156,49 @@ class _HomePageState extends State<HomePage> {
             shrinkWrap: true,
             itemBuilder: (context, index) {
               Photo photo = provider.photos[index];
-              return GestureDetector(
-                key: Key(photo.id.toString()),
-                onTap: () => viewImageDialog(photo),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      // IMAGE
-                      CachedNetworkImage(
-                        imageUrl: photo.webformatURL,
-                        fit: BoxFit.cover,
-                      ),
-
-                      // LIKES AND VIEWS
-                      Align(
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  key: Key(photo.id.toString()),
+                  onTap: () => viewImageDialog(photo),
+                  child: CachedNetworkImage(
+                    imageUrl: photo.webformatURL,
+                    imageBuilder: (context, imageProvider) {
+                      return Stack(
                         alignment: Alignment.bottomLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
+                        fit: StackFit.loose,
+                        children: [
+                          CachedNetworkImage(imageUrl: photo.webformatURL),
+                          Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
                                 children: [
-                                  const Icon(Icons.thumb_up_alt_rounded,
+                                  const Icon(Icons.thumb_up,
                                       color: Colors.white),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 4),
                                   Text(
                                     photo.likes.formatToK(),
+                                    // Replace with actual likes data
                                     style: const TextStyle(color: Colors.white),
                                   ),
-                                ],
-                              ),
-                              const SizedBox(width: 10.0),
-                              Row(
-                                children: [
+                                  const SizedBox(width: 16),
                                   const Icon(Icons.visibility,
                                       color: Colors.white),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 4),
                                   Text(
                                     photo.views.formatToK(),
+                                    // Replace with actual views data
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      )
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ),
               );

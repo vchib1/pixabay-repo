@@ -27,6 +27,7 @@ class HomeProvider extends ChangeNotifier {
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
+
   void initialLoading(bool value) {
     if (_pageNum == 1) {
       _isLoading = value;

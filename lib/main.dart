@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Pixabay Demo',
-      theme: ThemeData(useMaterial3: true),
+      theme: ThemeData.dark(useMaterial3: true),
       home: const HomePage(),
     );
   }
