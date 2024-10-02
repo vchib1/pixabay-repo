@@ -1,16 +1,21 @@
-# pixabay
 
-A new Flutter project.
+# Pixabay
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+## Packages Used
 
-A few resources to get you started if this is your first Flutter project:
+1. Provider
+2. http
+3. flutter_staggered_grid_view
+4. cached_network_image
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Authors
+
+- [Vivek Chib](https://www.github.com/vhib1)
+
+
+## Demo
+
+https://vchib1.github.io/pixabay/
+
