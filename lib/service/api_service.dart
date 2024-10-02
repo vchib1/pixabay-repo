@@ -6,7 +6,7 @@ import 'package:pixabay/utils/network_exception.dart';
 class ApiService {
   final int _perPage = 10;
   final String _baseUrl = "https://pixabay.com/api/";
-  final String _apiKey = "46281416-d2372bac269ed1cefd4c8eb36";
+  final String _apiKey = "API_KEY";
 
   Future<List<dynamic>> getImages({required int pageNum}) async {
     try {
