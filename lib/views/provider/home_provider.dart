@@ -13,7 +13,7 @@ class HomeProvider extends ChangeNotifier {
   String? error;
 
   // List of photos
-  List<Photo> _photos = [];
+  final List<Photo> _photos = [];
 
   List<Photo> get photos => _photos;
 
@@ -23,12 +23,14 @@ class HomeProvider extends ChangeNotifier {
   // For pagination
   bool _isFetchingMore = false;
 
+  bool get isFetchingMore => _isFetchingMore;
+
   // For initial loading
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
 
-  void initialLoading(bool value) {
+  void _initialLoading(bool value) {
     if (_pageNum == 1) {
       _isLoading = value;
       notifyListeners();
@@ -36,17 +38,17 @@ class HomeProvider extends ChangeNotifier {
   }
 
   Future<void> getImages() async {
-    initialLoading(true);
+    _initialLoading(true);
 
     // return if the photos are already being fetched
-    if (_isFetchingMore) {
-      debugPrint("Already fetching more");
-      return;
-    }
+    if (_isFetchingMore) return;
 
     try {
       // fetching more starts only after page 1
-      if (_pageNum > 1) _isFetchingMore = true;
+      if (_pageNum > 1) {
+        _isFetchingMore = true;
+        notifyListeners();
+      }
 
       // Get the Raw data from the API
       final List rawDataList = await _api.getImages(pageNum: _pageNum);
@@ -56,18 +58,19 @@ class HomeProvider extends ChangeNotifier {
           rawDataList.map((x) => Photo.fromMap(x)).toList();
 
       // Updating state with new photos
-      _photos = [..._photos, ...newPhotos];
+      _photos.addAll(newPhotos);
       notifyListeners();
 
-      initialLoading(false);
+      _initialLoading(false);
 
       // Increment page number
       _pageNum++;
     } catch (e) {
       error = e.toString();
-      initialLoading(false);
+      _initialLoading(false);
     } finally {
       _isFetchingMore = false;
+      notifyListeners();
     }
   }
 

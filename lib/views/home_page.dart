@@ -6,82 +6,57 @@ import 'package:pixabay/utils/extension/int_extension.dart';
 import 'package:pixabay/views/provider/home_provider.dart';
 import 'package:provider/provider.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  // Controller for GridView
-  late ScrollController _scrollController;
-
-  // HomeProvider instance
-  late HomeProvider _homeProvider;
-
-  @override
-  void initState() {
-    // Initializing variables
-    _homeProvider = context.read<HomeProvider>();
-    _scrollController = ScrollController();
-
-    // Adding listener to scroll controller
-    _scrollController.addListener(fetchMore);
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    // dispose and remove listener
-    _scrollController.removeListener(fetchMore);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
   // Fetch more images when scroll reaches end
-  Future<void> fetchMore() async {
-    bool scrollReachedEnd = _scrollController.hasClients &&
-        (_scrollController.position.pixels ==
-            _scrollController.position.maxScrollExtent);
+  Future<void> fetchMore(
+      BuildContext context, ScrollNotification notification) async {
+    final homeProvider = context.read<HomeProvider>();
+
+    bool scrollReachedEnd =
+        (notification.metrics.pixels == notification.metrics.maxScrollExtent);
 
     // If not reached end, return
-    if (!scrollReachedEnd) return;
+    if (!scrollReachedEnd || homeProvider.isFetchingMore) return;
 
     // If reached end, fetch more images
-    await _homeProvider.getImages();
+    debugPrint("Fetching more images");
+    await homeProvider.getImages();
 
     // If error, show error dialog
-    if (_homeProvider.error != null) {
-      await errorHandlerDialog();
+    if (homeProvider.error != null && context.mounted) {
+      await errorHandlerDialog(context);
     }
   }
 
   // Error dialog
-  Future<void> errorHandlerDialog() async {
+  Future<void> errorHandlerDialog(BuildContext context) async {
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Error'),
-        content: Text(_homeProvider.error ?? "Unknown error"),
+        content: Text(homeProvider.error ?? "Unknown error"),
         actions: [
           TextButton(
             onPressed: () async {
-              _homeProvider.clearError();
+              homeProvider.clearError();
 
               Navigator.of(context).pop();
 
-              await _homeProvider.getImages();
+              await homeProvider.getImages();
 
-              if (_homeProvider.error != null) {
-                await errorHandlerDialog();
+              if (homeProvider.error != null && context.mounted) {
+                await errorHandlerDialog(context);
               }
             },
             child: const Text('Retry'),
           ),
           TextButton(
             onPressed: () {
-              _homeProvider.clearError();
+              homeProvider.clearError();
               Navigator.of(context).pop();
             },
             child: const Text('Cancel'),
@@ -92,7 +67,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // View image dialog
-  Future<void> viewImageDialog(Photo photo) async {
+  Future<void> viewImageDialog(BuildContext context, Photo photo) async {
     await showDialog(
       context: context,
       builder: (context) => SizedBox(
@@ -113,11 +88,23 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  int getCrossAxisCountBasedOnWidth(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
+    if (width > 1200) {
+      return 4;
+    } else if (width > 800) {
+      return 3;
+    } else {
+      return 2;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // CrossAxisCount for MasonryGridView
     // if screen width is greater than 600, crossAxisCount = 3 else 2
-    int crossAxisCount = (MediaQuery.of(context).size.width > 600) ? 3 : 2;
+    int crossAxisCount = getCrossAxisCountBasedOnWidth(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text("Pixabay")),
@@ -149,60 +136,82 @@ class _HomePageState extends State<HomePage> {
           }
 
           // MasonryGridView to display images
-          return MasonryGridView.count(
-            controller: _scrollController,
-            itemCount: provider.photos.length,
-            crossAxisCount: crossAxisCount,
-            shrinkWrap: true,
-            itemBuilder: (context, index) {
-              Photo photo = provider.photos[index];
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  key: Key(photo.id.toString()),
-                  onTap: () => viewImageDialog(photo),
-                  child: CachedNetworkImage(
-                    imageUrl: photo.webformatURL,
-                    imageBuilder: (context, imageProvider) {
-                      return Stack(
-                        alignment: Alignment.bottomLeft,
-                        fit: StackFit.loose,
-                        children: [
-                          CachedNetworkImage(imageUrl: photo.webformatURL),
-                          Align(
-                            alignment: Alignment.bottomLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.thumb_up,
-                                      color: Colors.white),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    photo.likes.formatToK(),
-                                    // Replace with actual likes data
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  const Icon(Icons.visibility,
-                                      color: Colors.white),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    photo.views.formatToK(),
-                                    // Replace with actual views data
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                ],
+
+          int itemCount =
+              provider.photos.length + (provider.isFetchingMore ? 1 : 0);
+
+          return NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              fetchMore(context, notification);
+              return true;
+            },
+            child: MasonryGridView.count(
+              itemCount: itemCount,
+              crossAxisCount: crossAxisCount,
+              shrinkWrap: true,
+              itemBuilder: (context, index) {
+                if ((index == provider.photos.length) &&
+                    provider.isFetchingMore) {
+                  return const SizedBox(
+                    height: 150,
+                    width: double.infinity,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                Photo photo = provider.photos[index];
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GestureDetector(
+                    key: Key(photo.id.toString()),
+                    onTap: () => viewImageDialog(context, photo),
+                    child: CachedNetworkImage(
+                      imageUrl: photo.webFormatUrl,
+                      imageBuilder: (context, imageProvider) {
+                        return Stack(
+                          alignment: Alignment.bottomLeft,
+                          fit: StackFit.loose,
+                          children: [
+                            CachedNetworkImage(imageUrl: photo.webFormatUrl),
+                            Align(
+                              alignment: Alignment.bottomLeft,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.thumb_up,
+                                        color: Colors.white),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      photo.likes.formatToK(),
+                                      // Replace with actual likes data
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    const Icon(Icons.visibility,
+                                        color: Colors.white),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      photo.views.formatToK(),
+                                      // Replace with actual views data
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),

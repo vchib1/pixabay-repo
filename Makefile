@@ -1,7 +1,7 @@
 
 BASE_HREF = '/pixabay/'
 GITHUB_REPO := https://github.com/vchib1/pixabay.git
-BUILD_VER := '1.0.0'
+BUILD_VER := 1.0.1
 
 deploy-web:
 	@echo "Cleaning up..."
