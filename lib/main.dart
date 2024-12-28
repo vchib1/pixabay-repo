@@ -6,7 +6,7 @@ import 'package:pixabay/views/provider/home_provider.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  //
+  // Ensure that the widgets binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(
