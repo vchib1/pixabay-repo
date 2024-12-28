@@ -6,6 +6,7 @@ import 'package:pixabay/views/provider/home_provider.dart';
 import 'package:provider/provider.dart';
 
 void main() {
+  //
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(
