@@ -16,10 +16,10 @@ class Photo {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'webformatURL': webFormatUrl,
+      'likes': likes,
       'largeImageURL': largeImageURL,
       'views': views,
-      'likes': likes,
+      'webformatURL': webFormatUrl,
     };
   }
 
@@ -32,4 +32,18 @@ class Photo {
       likes: map['likes'] as int,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Photo &&
+          id == other.id &&
+          webFormatUrl == other.webFormatUrl &&
+          largeImageURL == other.largeImageURL &&
+          views == other.views &&
+          likes == other.likes;
+
+  @override
+  int get hashCode =>
+      Object.hash(id, webFormatUrl, largeImageURL, views, likes);
 }

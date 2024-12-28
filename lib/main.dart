@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:pixabay/service/api_service.dart';
 import 'package:pixabay/views/home_page.dart';
 import 'package:pixabay/views/provider/home_provider.dart';
@@ -6,9 +7,12 @@ import 'package:provider/provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
     ChangeNotifierProvider(
-      create: (_) => HomeProvider(api: ApiService()),
+      create: (_) => HomeProvider(
+        api: ApiService(client: Client()),
+      )..getImages(),
       child: const MyApp(),
     ),
   );

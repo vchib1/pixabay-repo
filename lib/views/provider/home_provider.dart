@@ -5,9 +5,7 @@ import 'package:pixabay/service/api_service.dart';
 class HomeProvider extends ChangeNotifier {
   final ApiService _api;
 
-  HomeProvider({required ApiService api}) : _api = api {
-    getImages();
-  }
+  HomeProvider({required ApiService api}) : _api = api;
 
   // Error message
   String? error;
